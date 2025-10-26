@@ -1,53 +1,35 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, jsonify
 from datetime import timedelta
+import math
 
 app = Flask(__name__)
 app.secret_key = "ridho_secret_key"
 app.permanent_session_lifetime = timedelta(minutes=10)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
     if "history" not in session:
         session["history"] = []
+    return render_template('index.html', history=session["history"])
 
-    result = None
-    error = None
+@app.route('/calculate', methods=['POST'])
+def calculate():
+    expression = request.json.get('expression', '')
+    try:
+        # evaluasi ekspresi dengan aman
+        result = eval(expression, {"__builtins__": None}, {"math": math})
+        calc_str = f"{expression} = {round(result, 3)}"
+        history = session.get("history", [])
+        history.insert(0, calc_str)
+        session["history"] = history
+        return jsonify(success=True, result=result, history=history)
+    except Exception:
+        return jsonify(success=False, error="Ekspresi tidak valid!")
 
-    if request.method == 'POST':
-        try:
-            num1 = float(request.form['num1'])
-            num2 = float(request.form['num2'])
-            operator = request.form['operator']
-
-            if operator == '+':
-                result = num1 + num2
-            elif operator == '-':
-                result = num1 - num2
-            elif operator == '*':
-                result = num1 * num2
-            elif operator == '/':
-                if num2 == 0:
-                    error = "Tidak bisa membagi dengan nol!"
-                else:
-                    result = num1 / num2
-            else:
-                error = "Operator tidak valid!"
-
-            if error is None:
-                # Simpan ke history
-                calc_str = f"{num1} {operator} {num2} = {round(result, 3)}"
-                history = session["history"]
-                history.insert(0, calc_str)  # tampilkan dari yang terbaru
-                session["history"] = history
-        except ValueError:
-            error = "Masukkan angka yang valid!"
-
-    return render_template('index.html', result=result, error=error, history=session["history"])
-
-@app.route('/clear')
+@app.route('/clear', methods=['POST'])
 def clear():
     session.pop("history", None)
-    return render_template('index.html', result=None, error=None, history=[])
+    return jsonify(success=True)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

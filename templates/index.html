@@ -2,89 +2,156 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kalkulator Flask dengan History</title>
+    <title>Kalkulator Flask</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #f7f8fa;
-            margin-top: 50px;
+            background-color: #000;
+            color: #fff;
+            font-family: "Segoe UI", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-        .container {
-            display: inline-block;
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        .calc {
+            background-color: #111;
+            padding: 20px;
+            border-radius: 20px;
+            width: 300px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.1);
         }
         .history {
             text-align: right;
+            color: #aaa;
             font-size: 14px;
-            color: #555;
+            min-height: 60px;
             margin-bottom: 10px;
-            max-height: 100px;
             overflow-y: auto;
         }
-        .result {
-            font-weight: bold;
-            color: #0078D7;
-            margin-top: 10px;
-        }
-        .error {
-            color: red;
-        }
-        input, select, button {
-            margin: 5px;
-            padding: 8px;
-            font-size: 16px;
-        }
-        .clear {
-            background-color: #ff5c5c;
-            border: none;
+        .display {
+            text-align: right;
+            font-size: 32px;
+            margin-bottom: 10px;
             color: white;
-            border-radius: 5px;
-            padding: 6px 12px;
+            height: 40px;
         }
-        .clear:hover {
-            background-color: #e04c4c;
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        button {
+            background-color: #222;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            padding: 15px;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #333;
+        }
+        .orange {
+            background-color: #ff9500;
+        }
+        .orange:active {
+            background-color: #e58c00;
+        }
+        .gray {
+            background-color: #a5a5a5;
+            color: black;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="history">
-            {% if history %}
-                {% for item in history %}
-                    <div>{{ item }}</div>
-                {% endfor %}
-            {% else %}
-                <div><i>Belum ada riwayat</i></div>
-            {% endif %}
+    <div class="calc">
+        <div class="history" id="history">
+            {% for h in history %}
+                <div>{{ h }}</div>
+            {% endfor %}
         </div>
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="gray" onclick="clearDisplay()">AC</button>
+            <button class="gray" onclick="appendOperator('%')">%</button>
+            <button class="gray" onclick="backspace()">⌫</button>
+            <button class="orange" onclick="appendOperator('/')">÷</button>
 
-        <form method="POST">
-            <input type="text" name="num1" placeholder="Angka pertama" required>
-            <select name="operator">
-                <option value="+">+</option>
-                <option value="-">−</option>
-                <option value="*">×</option>
-                <option value="/">÷</option>
-            </select>
-            <input type="text" name="num2" placeholder="Angka kedua" required>
-            <button type="submit">=</button>
-        </form>
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button class="orange" onclick="appendOperator('*')">×</button>
 
-        {% if result is not none %}
-            <p class="result">Hasil: {{ result }}</p>
-        {% endif %}
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button class="orange" onclick="appendOperator('-')">−</button>
 
-        {% if error %}
-            <p class="error">{{ error }}</p>
-        {% endif %}
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button class="orange" onclick="appendOperator('+')">+</button>
 
-        <form action="/clear">
-            <button class="clear">Hapus History</button>
-        </form>
+            <button onclick="appendNumber('0')">0</button>
+            <button onclick="appendNumber('.')">.</button>
+            <button style="grid-column: span 2;" class="orange" onclick="calculate()">=</button>
+        </div>
     </div>
+
+    <script>
+        let display = document.getElementById("display");
+        let historyBox = document.getElementById("history");
+        let currentInput = "";
+
+        function appendNumber(num) {
+            if (display.innerText === "0") display.innerText = "";
+            display.innerText += num;
+            currentInput = display.innerText;
+        }
+
+        function appendOperator(op) {
+            display.innerText += op;
+            currentInput = display.innerText;
+        }
+
+        function clearDisplay() {
+            display.innerText = "0";
+            currentInput = "";
+            fetch("/clear", {method: "POST"});
+            historyBox.innerHTML = "";
+        }
+
+        function backspace() {
+            display.innerText = display.innerText.slice(0, -1);
+            if (display.innerText === "") display.innerText = "0";
+            currentInput = display.innerText;
+        }
+
+        async function calculate() {
+            const response = await fetch("/calculate", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({expression: currentInput})
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                display.innerText = data.result;
+                updateHistory(data.history);
+            } else {
+                display.innerText = "Error";
+            }
+        }
+
+        function updateHistory(history) {
+            historyBox.innerHTML = "";
+            history.forEach(item => {
+                const div = document.createElement("div");
+                div.innerText = item;
+                historyBox.appendChild(div);
+            });
+        }
+    </script>
 </body>
 </html>
