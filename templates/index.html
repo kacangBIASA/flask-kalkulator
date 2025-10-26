@@ -2,55 +2,89 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kalkulator Flask</title>
+    <title>Kalkulator Flask dengan History</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
+            background: #f7f8fa;
             margin-top: 50px;
-            background: #f5f7fa;
         }
-        form {
-            background: white;
+        .container {
             display: inline-block;
-            padding: 20px;
+            background: white;
+            padding: 25px;
             border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        input, select, button {
-            margin: 10px;
-            padding: 8px;
-            font-size: 16px;
+        .history {
+            text-align: right;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+            max-height: 100px;
+            overflow-y: auto;
         }
         .result {
             font-weight: bold;
             color: #0078D7;
+            margin-top: 10px;
         }
         .error {
             color: red;
         }
+        input, select, button {
+            margin: 5px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        .clear {
+            background-color: #ff5c5c;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            padding: 6px 12px;
+        }
+        .clear:hover {
+            background-color: #e04c4c;
+        }
     </style>
 </head>
 <body>
-    <h1>🧮 Kalkulator Sederhana (Flask)</h1>
-    <form method="POST">
-        <input type="text" name="num1" placeholder="Angka pertama" required>
-        <select name="operator">
-            <option value="+">+</option>
-            <option value="-">−</option>
-            <option value="*">×</option>
-            <option value="/">÷</option>
-        </select>
-        <input type="text" name="num2" placeholder="Angka kedua" required>
-        <button type="submit">Hitung</button>
-    </form>
+    <div class="container">
+        <div class="history">
+            {% if history %}
+                {% for item in history %}
+                    <div>{{ item }}</div>
+                {% endfor %}
+            {% else %}
+                <div><i>Belum ada riwayat</i></div>
+            {% endif %}
+        </div>
 
-    {% if result is not none %}
-        <p class="result">Hasil: {{ result }}</p>
-    {% endif %}
+        <form method="POST">
+            <input type="text" name="num1" placeholder="Angka pertama" required>
+            <select name="operator">
+                <option value="+">+</option>
+                <option value="-">−</option>
+                <option value="*">×</option>
+                <option value="/">÷</option>
+            </select>
+            <input type="text" name="num2" placeholder="Angka kedua" required>
+            <button type="submit">=</button>
+        </form>
 
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
+        {% if result is not none %}
+            <p class="result">Hasil: {{ result }}</p>
+        {% endif %}
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <form action="/clear">
+            <button class="clear">Hapus History</button>
+        </form>
+    </div>
 </body>
 </html>
