@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'ridho/flask-kalkulator'
+        IMAGE_NAME = 'ridhoaja/flask-kalkulator'
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
     }
     stages {
